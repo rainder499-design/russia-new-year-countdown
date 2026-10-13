@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Новый год 2027 — отсчёт по городам России</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root { --bg1: #04122e; --bg2: #0b2a5b; --ice: #8fd3ff; --white: #f4faff; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #020a1c; cursor: none; }
+body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--white); }
+
+#stage {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  transform-origin: center; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 35%, var(--bg2) 0%, var(--bg1) 70%);
+}
+#snow { position: absolute; inset: 0; pointer-events: none; }
+
+section {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 40px 80px;
+}
+.final { display: none; }
+body.done .count { display: none; }
+body.done .final { display: flex; }
+
+h1 { font-size: 64px; font-weight: 300; letter-spacing: .28em; color: var(--ice); margin-bottom: 28px; }
+
+.timer { display: flex; gap: 56px; margin-bottom: 36px; }
+.timer div { display: flex; flex-direction: column; align-items: center; min-width: 300px; }
+.timer b {
+  font-size: 230px; line-height: 1; font-weight: 200; font-variant-numeric: tabular-nums;
+  color: var(--white); text-shadow: 0 0 24px rgba(143, 211, 255, .65), 0 0 70px rgba(80, 160, 255, .45);
+}
+.timer span { font-size: 34px; color: var(--ice); margin-top: 6px; letter-spacing: .08em; }
+
+.lead { font-size: 40px; color: var(--ice); font-weight: 300; }
+#city { font-weight: 600; line-height: 1.15; margin: 14px 0 10px; text-shadow: 0 0 30px rgba(143, 211, 255, .5); }
+.sub { font-size: 32px; color: #c6e4ff; font-weight: 300; max-width: 1700px; line-height: 1.3; margin-top: 6px; }
+.foot { position: absolute; bottom: 46px; left: 0; right: 0; font-size: 28px; color: #7fa8d6; font-weight: 300; }
+
+.final h1 { font-size: 118px; letter-spacing: .06em; font-weight: 600; color: var(--white); line-height: 1.2;
+  text-shadow: 0 0 30px rgba(143, 211, 255, .8), 0 0 90px rgba(80, 160, 255, .6); margin-bottom: 40px; }
+.final p { font-size: 40px; color: var(--ice); font-weight: 300; }
+
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="snow" width="1920" height="1080"></canvas>
+
+  <section class="count">
+    <h1>НОВЫЙ ГОД 2027</h1>
+    <div class="timer">
+      <div><b id="d">00</b><span>дней</span></div>
+      <div><b id="h">00</b><span>часов</span></div>
+      <div><b id="m">00</b><span>минут</span></div>
+      <div><b id="s">00</b><span>секунд</span></div>
+    </div>
+    <p class="lead">Сейчас отсчёт для города</p>
+    <div id="city"></div>
+    <p id="more" class="sub"></p>
+    <p id="local" class="sub"></p>
+    <p id="prev" class="foot"></p>
+  </section>
+
+  <section class="final">
+    <h1>С НОВЫМ 2027 ГОДОМ, РОССИЯ! 🇷🇺</h1>
+    <p>Новый год наступил во всех городах страны — от Камчатки до Калининграда</p>
+    <p id="mskclock" class="sub"></p>
+  </section>
+</div>
+<script>
+// Города России по IANA-часовым поясам. Внутри зоны крупные города идут первыми:
+// именно они показываются крупно, когда несколько городов встречают Новый год одновременно.
+// Порядок зон важен только для зон с одинаковым смещением (первая зона даёт главные города группы).
+const ZONES = [
+  { tz: 'Asia/Kamchatka', cities: ['Петропавловск-Камчатский', 'Елизово', 'Вилючинск'] },
+  { tz: 'Asia/Anadyr', cities: ['Анадырь', 'Певек', 'Билибино'] },
+  { tz: 'Asia/Magadan', cities: ['Магадан', 'Сусуман'] },
+  { tz: 'Asia/Sakhalin', cities: ['Южно-Сахалинск', 'Корсаков', 'Холмск', 'Оха'] },
+  { tz: 'Asia/Srednekolymsk', cities: ['Среднеколымск', 'Черский'] },
+  { tz: 'Asia/Vladivostok', cities: ['Владивосток', 'Хабаровск', 'Уссурийск', 'Находка', 'Артём', 'Комсомольск-на-Амуре', 'Биробиджан', 'Арсеньев', 'Большой Камень', 'Спасск-Дальний'] },
+  { tz: 'Asia/Ust-Nera', cities: ['Верхоянск', 'Усть-Нера'] },
+  { tz: 'Asia/Yakutsk', cities: ['Якутск', 'Благовещенск', 'Нерюнгри', 'Мирный', 'Ленск', 'Алдан', 'Удачный', 'Свободный', 'Тында'] },
+  { tz: 'Asia/Chita', cities: ['Чита', 'Краснокаменск'] },
+  { tz: 'Asia/Irkutsk', cities: ['Иркутск', 'Улан-Удэ', 'Ангарск', 'Братск', 'Усть-Илимск', 'Северобайкальск', 'Шелехов'] },
+  { tz: 'Asia/Krasnoyarsk', cities: ['Красноярск', 'Норильск', 'Абакан', 'Ачинск', 'Канск', 'Минусинск', 'Дудинка', 'Лесосибирск', 'Железногорск', 'Кызыл'] },
+  { tz: 'Asia/Novosibirsk', cities: ['Новосибирск', 'Бердск'] },
+  { tz: 'Asia/Novokuznetsk', cities: ['Кемерово', 'Новокузнецк', 'Прокопьевск'] },
+  { tz: 'Asia/Barnaul', cities: ['Барнаул', 'Бийск', 'Горно-Алтайск', 'Рубцовск'] },
+  { tz: 'Asia/Tomsk', cities: ['Томск', 'Северск'] },
+  { tz: 'Asia/Omsk', cities: ['Омск'] },
+  { tz: 'Asia/Yekaterinburg', cities: ['Екатеринбург', 'Челябинск', 'Уфа', 'Пермь', 'Тюмень', 'Оренбург', 'Курган', 'Магнитогорск', 'Нижний Тагил', 'Первоуральск', 'Каменск-Уральский', 'Златоуст', 'Миасс', 'Стерлитамак', 'Нефтекамск', 'Березники', 'Сургут', 'Нижневартовск', 'Нефтеюганск', 'Ханты-Мансийск', 'Ноябрьск', 'Новый Уренгой', 'Салехард'] },
+  { tz: 'Europe/Samara', cities: ['Самара', 'Тольятти', 'Ижевск', 'Сызрань', 'Новокуйбышевск', 'Глазов'] },
+  { tz: 'Europe/Saratov', cities: ['Саратов', 'Энгельс', 'Балаково'] },
+  { tz: 'Europe/Ulyanovsk', cities: ['Ульяновск', 'Димитровград'] },
+  { tz: 'Europe/Astrakhan', cities: ['Астрахань'] },
+  { tz: 'Europe/Moscow', cities: ['Москва', 'Санкт-Петербург', 'Нижний Новгород', 'Казань', 'Ростов-на-Дону', 'Краснодар', 'Сочи', 'Новороссийск', 'Воронеж', 'Ярославль', 'Владимир', 'Кострома', 'Иваново', 'Рязань', 'Тула', 'Калуга', 'Смоленск', 'Брянск', 'Орёл', 'Курск', 'Белгород', 'Липецк', 'Тамбов', 'Тверь', 'Великий Новгород', 'Псков', 'Вологда', 'Череповец', 'Архангельск', 'Мурманск', 'Петрозаводск', 'Сыктывкар', 'Нарьян-Мар', 'Пенза', 'Саранск', 'Чебоксары', 'Йошкар-Ола', 'Нижнекамск', 'Набережные Челны', 'Ставрополь', 'Пятигорск', 'Махачкала', 'Грозный', 'Владикавказ', 'Нальчик', 'Черкесск', 'Элиста', 'Майкоп'] },
+  { tz: 'Europe/Volgograd', cities: ['Волгоград', 'Волжский'] },
+  { tz: 'Europe/Kirov', cities: ['Киров'] },
+  { tz: 'Europe/Kaliningrad', cities: ['Калининград', 'Советск', 'Черняховск', 'Балтийск'] }
+];
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const YEAR = 2027;
+
+  // Тест: ?now=2026-12-31T11:59:50Z подменяет "сейчас" (время всё равно идёт по реальным часам).
+  const q = new URLSearchParams(location.search);
+  const skew = q.has('now') && !isNaN(Date.parse(q.get('now'))) ? Date.parse(q.get('now')) - Date.now() : 0;
+  const now = () => Date.now() + skew;
+
+  // ---------- часовые пояса ----------
+  const fmt = {};
+  const getFmt = (tz, opt) => fmt[tz + opt.k] || (fmt[tz + opt.k] = new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: tz }, opt.o)));
+  const FULL = { k: 'f', o: { hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' } };
+  const CLOCK = { k: 'c', o: { hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' } };
+
+  function offsetAt(tz, ms) {
+    const s = Math.floor(ms / 1000) * 1000, p = {};
+    for (const x of getFmt(tz, FULL).formatToParts(s)) p[x.type] = +x.value;
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - s;
+  }
+  // Момент (UTC, мс), когда в зоне наступает 1 января YEAR 00:00:00
+  function midnight(tz) {
+    const guess = Date.UTC(YEAR, 0, 1);
+    let t = guess - offsetAt(tz, guess);
+    t = guess - offsetAt(tz, t);
+    return t;
+  }
+
+  // ---------- группы городов по моменту полуночи ----------
+  const seen = new Set(), byTime = new Map();
+  for (const z of ZONES) {
+    let t;
+    try { t = midnight(z.tz); } catch (e) { console.error('Неверный часовой пояс:', z.tz); continue; }
+    const names = z.cities.filter(c => !seen.has(c) && seen.add(c)); // без дубликатов
+    if (!names.length) continue;
+    const g = byTime.get(t) || { t, names: [], tz: z.tz };
+    g.names.push(...names);
+    byTime.set(t, g);
+  }
+  const groups = [...byTime.values()].sort((a, b) => a.t - b.t);
+  console.info('Городов:', seen.size, '· групп (моментов полуночи):', groups.length);
+
+  // ---------- интерфейс ----------
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+  const clock = (tz, ms) => getFmt(tz, CLOCK).format(ms);
+  const utc = g => { const h = offsetAt(g.tz, g.t) / 36e5; return 'UTC' + (h >= 0 ? '+' : '−') + Math.abs(h); };
+  const list = (a, n) => a.slice(0, n).join(' · ') + (a.length > n ? ' и ещё ' + (a.length - n) : '');
+  const set = (id, v) => { const e = $(id); if (e.textContent !== v) e.textContent = v; };
+  let shown = -2;
+
+  function tick() {
+    const n = now();
+    const i = groups.findIndex(g => g.t > n);
+    const done = i < 0;
+    document.body.classList.toggle('done', done);
+
+    if (done) {
+      set('mskclock', clock('Europe/Moscow', n) + ' по Москве');
+      return;
+    }
+    const g = groups[i];
+    const s = Math.ceil((g.t - n) / 1000); // всегда >= 1: отрицательного таймера не бывает
+    set('d', pad(Math.floor(s / 86400)));
+    set('h', pad(Math.floor(s / 3600) % 24));
+    set('m', pad(Math.floor(s / 60) % 60));
+    set('s', pad(s % 60));
+    if (i !== shown) {
+      shown = i;
+      const title = g.names.slice(0, 3).join(' · ');
+      const c = $('city');
+      c.textContent = title;
+      c.style.fontSize = title.length > 34 ? '64px' : title.length > 20 ? '84px' : '112px';
+      set('more', g.names.length > 3 ? 'и ещё: ' + list(g.names.slice(3), 12) : '');
+      set('prev', i > 0 ? 'Уже встретили Новый год: ' + list(groups[i - 1].names, 3) : '');
+    }
+    set('local', 'Местное время в городе ' + g.names[0] + ': ' + clock(g.tz, n) + ' (' + utc(g) + ')');
+  }
+
+  function loop() { tick(); setTimeout(loop, 1000 - (now() % 1000) + 5); }
+  loop();
+
+  // ---------- масштаб под окно ----------
+  const stage = $('stage');
+  function fit() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = 'translate(-50%,-50%) scale(' + k + ')';
+  }
+  addEventListener('resize', fit); fit();
+
+  // ---------- лёгкий снег (~30 кадров/с) ----------
+  const cv = $('snow'), ctx = cv.getContext('2d');
+  const fl = Array.from({ length: 90 }, () => ({ x: Math.random() * 1920, y: Math.random() * 1080, r: 1 + Math.random() * 3, v: 25 + Math.random() * 45, p: Math.random() * 6 }));
+  let last = 0;
+  function snow(ts) {
+    requestAnimationFrame(snow);
+    if (ts - last < 33) return;
+    const dt = Math.min((ts - last) / 1000, 0.1); last = ts;
+    ctx.clearRect(0, 0, 1920, 1080);
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    for (const f of fl) {
+      f.y += f.v * dt; f.p += dt;
+      if (f.y > 1090) { f.y = -10; f.x = Math.random() * 1920; }
+      ctx.beginPath(); ctx.arc(f.x + Math.sin(f.p) * 14, f.y, f.r, 0, 6.283); ctx.fill();
+    }
+  }
+  requestAnimationFrame(snow);
+})();
+
+</script>
+</body>
+</html>
