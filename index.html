@@ -334,82 +334,56 @@ resize();
 requestAnimationFrame(snow);
 </script>
 
-<!-- Вставляем кнопку музыки и плеер (из music-3.html) -->
 <style>
-  #nyMusicBtn{position:fixed;left:10px;bottom:10px;padding:6px 12px;font-size:13px;font-weight:600;color:#fff;background:#c0152f;border:1px solid #fff;border-radius:8px;cursor:pointer;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;z-index:2147483647}
+  #nyMusicBtn{
+    position:fixed;left:10px;bottom:10px;padding:8px 12px;font-size:14px;font-weight:600;color:#fff;background:#c0152f;border:1px solid #fff;border-radius:8px;cursor:pointer;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;z-index:2147483647
+  }
+  #nyMusicBtn[aria-pressed="true"]{background:#0aa04a}
 </style>
-<button id="nyMusicBtn" type="button">🎄 Включить музыку</button>
+<button id="nyMusicBtn" type="button" aria-pressed="false">🎄 Включить музыку</button>
 <script>
-/* Музыка встроена прямо в файл — папка music/ не нужна */
-var TRACK_DATA = [
-  "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIO5m1Oq3wAaqQ0Yx7lWsKoiP7nbD5s0hbaNr0n1cE7lL5d7ufw8ID34y+1fqU8N+CZV2lZ7d1uUBDL7EiSxoQm6k+0X9fKMpSe2aH/0dQ1LZpB9A+9kP6rQ3sI8XxzjD2t+YIh3u3z7AkQi2UvZcOe1W88QfI6YQ1G6B4z52/5cW5d1S4zPiGq9K8bZxzO5wh4RifS5X/j4B2nPygR9wYMl0sv8glaD3A8mghNniPH+NQvX1M2nA0bArJr9ttS9XH9DkFj8XK9tWJkJ6mA4S0p2P3DB3/x2n7b8+K2s0Z/6zW4EqH6N7luh4cWvx4aZdMca6vW3obX1K0w0GVj0JwzvcN0oV+Jxe/ae8zCg5PJQAhM0Xg1W6G0TWq2A+AtA7m0w7eL8vKAFczcD1VdL7CH6WGO0c3I+qX2OP3zP2d1C7nRE9/C1u0PQZ3Q2n6bRrKG1l0K9mPVg6hClOa7D0HnD6wRz66LvY0L9giQhFvWE3kW8QW5f4vA4rK8eXnNA0N790+L8g+Tj/42LJ1g4T0w8dE8oVw4Oz5g0V80yH9I/LhZ6yJdN6d5Oh2UAZxgkXvA0Lh2N+3cWZ+Q==",
-  "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIOiX8m5w2S4mZs8Ck9lVv0bZ9Q0S5otnS2KqoPZa0E0h1+dYoJqHTBkOkBtmY/0K1nK6V9pUX4tJ8x1D7EhP9UDWtCk3M7sYVT9Fv/1NsH6k+i4rJTkhdA1F0uZ8Oa7Xt5fQaJr+W3d49hUI8xUQ5N2hqqR6gD7a9j0Ok1o2m4z95pFjR2a7Y1V4f5PXc/3E9HQLmWfU8wJub3JxVXh3qt5Ke52W6pmMpL1JQ/4K6BBK7mJ7F4yxPzqWXm4/9JvYjwfOAk4gktoQHcZy1w7Gq+vL7ciuo0x4wiqWQF8rD1xqj0w7P4ZCk8WJvX0PWp0iYk+1xqoT0d8nU8zGw6DF6yO+rKgQ2U/wbGxqBUXLQ==",
-  "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIO5L0N7x5+P3Tg/2R7hP8eS43z4FHiX6ah/c6aL+o8tYhpJ8JQ3C4KkE8lN5h2I0+M+wg6vruS9YW+gfv0tq3Q+7r1ikJLv6b8aE/ckJXo/XnO+0M7kSk31E+H9xVv9KQ6ji8XgC2qTocpJ2Y7S7x7TYxL1h0/0d6Y7tXkB3Ge+N9c8n0vXv8v+R9lyBMU3B0Atvt9rINy12d+M4tT4vG7Yks2wQ9fGecA3zD9Pcrxg3J9Ih7w9W6HImH8rYAgwta4d7LBcZmjpD+V9mEV7uNd59//f1D4JdEATvhv1VgB3jB8L4E7ESQ=="
-];
+(async function(){
+  const btn = document.getElementById('nyMusicBtn');
+  let audio = null, playing = false;
 
-var audio = null;
-var isPlaying = false;
-
-function decodeTrackData(str) {
-  try {
-    return atob(str);
-  } catch (e) {
-    console.error('Ошибка декодирования base64:', e);
-    return null;
-  }
-}
-
-function buildAudio() {
-  if (audio) return audio;
-
-  var source = TRACK_DATA[0];
-  if (!source) return null;
-
-  var binary = decodeTrackData(source);
-  if (!binary) return null;
-
-  var bytes = new Uint8Array(binary.length);
-  for (var i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+  async function loadTrack() {
+    const res = await fetch('/music-3.html');
+    if (!res.ok) throw new Error('Не удалось загрузить /music-3.html: ' + res.status);
+    const txt = await res.text();
+    const match = txt.match(/var\s+TRACK_DATA\s*=\s*\[([\s\S]*?)\];/);
+    if (!match) throw new Error('TRACK_DATA не найден в music-3.html');
+    const inner = match[1];
+    const arr = JSON.parse('[' + inner + ']');
+    const b64 = arr[0];
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const blob = new Blob([u8], { type: 'audio/mpeg' });
+    audio = new Audio(URL.createObjectURL(blob));
+    audio.loop = true;
+    audio.volume = 0.65;
   }
 
-  var blob = new Blob([bytes], { type: 'audio/mpeg' });
-  audio = new Audio(URL.createObjectURL(blob));
-  audio.loop = true;
-  audio.volume = 0.65;
-  return audio;
-}
-
-var musicBtn = document.getElementById('nyMusicBtn');
-musicBtn.addEventListener('click', function () {
-  try {
-    if (!audio) {
-      audio = buildAudio();
-      if (!audio) {
-        alert('Не удалось загрузить музыку. Проверьте TRACK_DATA.');
-        return;
+  btn.addEventListener('click', async function(){
+    try {
+      if (!audio) await loadTrack();
+      if (!playing) {
+        await audio.play();
+        playing = true;
+        btn.textContent = '🔊 Выключить музыку';
+        btn.setAttribute('aria-pressed','true');
+      } else {
+        audio.pause();
+        playing = false;
+        btn.textContent = '🎄 Включить музыку';
+        btn.setAttribute('aria-pressed','false');
       }
+    } catch (e) {
+      console.error('Ошибка плеера:', e);
+      alert('Не удалось воспроизвести музыку. Откройте консоль для деталей.');
     }
-
-    if (isPlaying) {
-      audio.pause();
-      isPlaying = false;
-      musicBtn.textContent = '🎄 Включить музыку';
-      return;
-    }
-
-    audio.play().then(function () {
-      isPlaying = true;
-      musicBtn.textContent = '🔊 Выключить музыку';
-    }).catch(function (err) {
-      console.error('Ошибка воспроизведения:', err);
-      alert('Нажмите на кнопку ещё раз — браузер может блокировать звук до первого клика.');
-    });
-  } catch (e) {
-    console.error('Ошибка запуска музыки:', e);
-    alert('Ошибка запуска музыки: ' + e.message);
-  }
-});
+  });
+})();
 </script>
 </body>
 </html>
