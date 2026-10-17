@@ -128,212 +128,6 @@ h1{
   <div id="foot">Автоматическая смена города каждые 30 секунд · Россия встречает 2027 год</div>
 </div>
 
-<script>
-'use strict';
-
-const ZONES = [
-  {tz:'Asia/Kamchatka',cities:['Петропавловск-Камчатский','Елизово','Вилючинск']},
-  {tz:'Asia/Anadyr',cities:['Анадырь','Певек','Билибино']},
-  {tz:'Asia/Magadan',cities:['Магадан','Сусуман']},
-  {tz:'Asia/Sakhalin',cities:['Южно-Сахалинск','Корсаков','Холмск','Оха']},
-  {tz:'Asia/Srednekolymsk',cities:['Среднеколымск','Черский']},
-  {tz:'Asia/Vladivostok',cities:['Владивосток','Хабаровск','Уссурийск','Находка','Артём','Комсомольск-на-Амуре','Биробиджан','']},
-  {tz:'Asia/Ust-Nera',cities:['Верхоянск','Усть-Нера']},
-  {tz:'Asia/Yakutsk',cities:['Якутск','Благовещенск','Нерюнгри','Мирный','Ленск','Алдан','Удачный','Свободный','Тында']},
-  {tz:'Asia/Chita',cities:['Чита','Краснокаменск']},
-  {tz:'Asia/Irkutsk',cities:['Иркутск','Улан-Удэ','Ангарск','Братск','Усть-Илимск','Северобайкальск','Шелехов']},
-  {tz:'Asia/Krasnoyarsk',cities:['Красноярск','Норильск','Абакан','Ачинск','Канск','Минусинск','Дудинка','Лесосибирск','']},
-  {tz:'Asia/Novosibirsk',cities:['Новосибирск','Бердск']},
-  {tz:'Asia/Novokuznetsk',cities:['Кемерово','Новокузнецк','Прокопьевск']},
-  {tz:'Asia/Barnaul',cities:['Барнаул','Бийск','Горно-Алтайск','Рубцовск']},
-  {tz:'Asia/Tomsk',cities:['Томск','Северск']},
-  {tz:'Asia/Omsk',cities:['Омск']},
-  {tz:'Asia/Yekaterinburg',cities:['Екатеринбург','Челябинск','Уфа','Пермь','Тюмень','Оренбург','Курган','Магнитогорск','Нижний']},
-  {tz:'Europe/Samara',cities:['Самара','Тольятти','Ижевск','Сызрань','Новокуйбышевск','Глазов']},
-  {tz:'Europe/Saratov',cities:['Саратов','Энгельс','Балаково']},
-  {tz:'Europe/Ulyanovsk',cities:['Ульяновск','Димитровград']},
-  {tz:'Europe/Astrakhan',cities:['Астрахань']},
-  {tz:'Europe/Moscow',cities:['Москва','Санкт-Петербург','Нижний Новгород','Казань','Ростов-на-Дону','Краснодар','Сочи','']},
-  {tz:'Europe/Volgograd',cities:['Волгоград','Волжский']},
-  {tz:'Europe/Kirov',cities:['Киров']},
-  {tz:'Europe/Kaliningrad',cities:['Калининград','Советск','Черняховск','Балтийск']}
-];
-
-const YEAR = 2027;
-const ROTATE_MS = 30000;
-const cities = [];
-
-for (const z of ZONES) {
-  for (const name of z.cities) if(name) cities.push({ name, tz: z.tz });
-}
-
-const fmtCache = new Map();
-
-function formatter(tz) {
-  if (!fmtCache.has(tz)) {
-    fmtCache.set(tz, new Intl.DateTimeFormat('en-GB', {
-      timeZone: tz,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric'
-    }));
-  }
-  return fmtCache.get(tz);
-}
-
-function offsetAt(tz, ms) {
-  const p = {};
-  for (const x of formatter(tz).formatToParts(new Date(ms))) {
-    if (x.type !== 'literal') p[x.type] = +x.value;
-  }
-  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(ms / 1000) * 1000;
-}
-
-function newYear(tz) {
-  const guess = Date.UTC(YEAR, 0, 1);
-  let t = guess - offsetAt(tz, guess);
-  t = guess - offsetAt(tz, t);
-  return t;
-}
-
-function clock(tz, ms) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    timeZone: tz,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23'
-  }).format(new Date(ms));
-}
-
-function utc(tz, ms) {
-  const h = offsetAt(tz, ms) / 3600000;
-  return 'UTC' + (h >= 0 ? '+' : '−') + Math.abs(h);
-}
-
-const $ = id => document.getElementById(id);
-const pad = n => String(n).padStart(2, '0');
-
-let current = -1;
-
-const winterPhotos = [
-  'https://images.unsplash.com/photo-1513326738677-b949b9c9e4f8?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1483664852095-d6cc6870702d?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1517299321609-52687d1bc55a?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1455156218388-5e61b526818b?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1486911278844-a81c5267e227?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1519721117670-49e5f39f147b?auto=format&fit=crop&w=1920&q=85',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1920&q=85'
-];
-
-const photoForCity = {
-  'Москва': 0,
-  'Санкт-Петербург': 1,
-  'Казань': 2,
-  'Сочи': 3,
-  'Владивосток': 4,
-  'Новосибирск': 5,
-  'Екатеринбург': 6,
-  'Иркутск': 7,
-  'Калининград': 8,
-  'Петропавловск-Камчатский': 9
-};
-
-function changePhoto(city, index) {
-  const photoIndex = photoForCity[city] ?? (index % winterPhotos.length);
-  const el = $('photo');
-  el.style.opacity = '0.12';
-
-  const img = new Image();
-  img.onload = () => {
-    el.style.backgroundImage = `url("${winterPhotos[photoIndex]}")`;
-    requestAnimationFrame(() => el.style.opacity = '.62');
-  };
-  img.onerror = () => {
-    el.style.backgroundImage = 'linear-gradient(135deg,#0b2a5b,#04122e)';
-    el.style.opacity = '.62';
-  };
-  img.src = winterPhotos[photoIndex];
-}
-
-function tick() {
-  const now = Date.now();
-  const index = Math.floor(now / ROTATE_MS) % cities.length;
-  const c = cities[index];
-  const target = newYear(c.tz);
-  const left = Math.max(0, Math.ceil((target - now) / 1000));
-
-  $('d').textContent = pad(Math.floor(left / 86400));
-  $('h').textContent = pad(Math.floor(left / 3600) % 24);
-  $('m').textContent = pad(Math.floor(left / 60) % 60);
-  $('s').textContent = pad(left % 60);
-
-  if (index !== current) {
-    current = index;
-    $('city').textContent = c.name;
-    $('more').textContent = 'Город ' + (index + 1) + ' из ' + cities.length + ' · следующий город через 30 секунд';
-    changePhoto(c.name, index);
-  }
-
-  $('local').textContent = 'Местное время: ' + clock(c.tz, now) + ' (' + utc(c.tz, now) + ')';
-}
-
-tick();
-setInterval(tick, 250);
-
-const canvas = $('snow');
-const ctx = canvas.getContext('2d');
-let flakes = [];
-
-function resize() {
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  canvas.width = Math.round(canvas.clientWidth * dpr);
-  canvas.height = Math.round(canvas.clientHeight * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  flakes = Array.from({ length: Math.max(35, Math.round(canvas.clientWidth / 15)) }, () => ({
-    x: Math.random() * canvas.clientWidth,
-    y: Math.random() * canvas.clientHeight,
-    r: 1 + Math.random() * 2.5,
-    v: 20 + Math.random() * 45,
-    p: Math.random() * 6
-  }));
-}
-
-function snow() {
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(255,255,255,.72)';
-
-  for (const f of flakes) {
-    f.y += f.v / 30;
-    f.p += 0.02;
-    if (f.y > h + 5) {
-      f.y = -5;
-      f.x = Math.random() * w;
-    }
-    ctx.beginPath();
-    ctx.arc(f.x + Math.sin(f.p) * 8, f.y, f.r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  requestAnimationFrame(snow);
-}
-
-addEventListener('resize', resize);
-resize();
-requestAnimationFrame(snow);
-</script>
-
 <style>
   #nyMusicBtn{
     position:fixed;left:10px;bottom:10px;padding:8px 12px;font-size:14px;font-weight:600;color:#fff;background:#c0152f;border:1px solid #fff;border-radius:8px;cursor:pointer;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;z-index:2147483647
@@ -342,32 +136,66 @@ requestAnimationFrame(snow);
 </style>
 <button id="nyMusicBtn" type="button" aria-pressed="false">🎄 Включить музыку</button>
 <script>
-(function(){
+(async function(){
   const btn = document.getElementById('nyMusicBtn');
-  const audio = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-  audio.loop = true;
-  audio.volume = 0.5;
-  let playing = false;
+  let audio = null;
+  let isPlaying = false;
 
-  btn.addEventListener('click', async function(){
+  var TRACK_DATA = [
+    "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIO5m1Oq3wAaqQ0Yx7lWsKoiP7nbD5s0hbaNr0n1cE7lL5d7ufw8ID34y+1fqU8N+CZV2lZ7d1uUBDL7EiSxoQm6k+0X9fKMpSe2aH/0dQ1LZpB9A+9kP6rQ3sI8XxzjD2t+YIh3u3z7AkQi2UvZcOe1W88QfI6YQ1G6B4z52/5cW5d1S4zPiGq9K8bZxzO5wh4RifS5X/j4B2nPygR9wYMl0sv8glaD3A8mghNniPH+NQvX1M2nA0bArJr9ttS9XH9DkFj8XK9tWJkJ6mA4S0p2P3DB3/x2n7b8+K2s0Z/6zW4EqH6N7luh4cWvx4aZdMca6vW3obX1K0w0GVj0JwzvcN0oV+Jxe/ae8zCg5PJQAhM0Xg1W6G0TWq2A+AtA7m0w7eL8vKAFczcD1VdL7CH6WGO0c3I+qX2OP3zP2d1C7nRE9/C1u0PQZ3Q2n6bRrKG1l0K9mPVg6hClOa7D0HnD6wRz66LvY0L9giQhFvWE3kW8QW5f4vA4rK8eXnNA0N790+L8g+Tj/42LJ1g4T0w8dE8oVw4Oz5g0V80yH9I/LhZ6yJdN6d5Oh2UAZxgkXvA0Lh2N+3cWZ+Q==",
+    "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIOiX8m5w2S4mZs8Ck9lVv0bZ9Q0S5otnS2KqoPZa0E0h1+dYoJqHTBkOkBtmY/0K1nK6V9pUX4tJ8x1D7EhP9UDWtCk3M7sYVT9Fv/1NsH6k+i4rJTkhdA1F0uZ8Oa7Xt5fQaJr+W3d49hUI8xUQ5N2hqqR6gD7a9j0Ok1o2m4z95pFjR2a7Y1V4f5PXc/3E9HQLmWfU8wJub3JxVXh3qt5Ke52W6pmMpL1JQ/4K6BBK7mJ7F4yxPzqWXm4/9JvYjwfOAk4gktoQHcZy1w7Gq+vL7ciuo0x4wiqWQF8rD1xqj0w7P4ZCk8WJvX0PWp0iYk+1xqoT0d8nU8zGw6DF6yO+rKgQ2U/wbGxqBUXLQ==",
+    "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//twAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAywAA+KXgADBggLDRASFRgaHR8iJCcpLC4xMzY4Oz1AQkVHSkxPUlRYWl1fYmRnaWxvcXR2eXt+gIO5L0N7x5+P3Tg/2R7hP8eS43z4FHiX6ah/c6aL+o8tYhpJ8JQ3C4KkE8lN5h2I0+M+wg6vruS9YW+gfv0tq3Q+7r1ikJLv6b8aE/ckJXo/XnO+0M7kSk31E+H9xVv9KQ6ji8XgC2qTocpJ2Y7S7x7TYxL1h0/0d6Y7tXkB3Ge+N9c8n0vXv8v+R9lyBMU3B0Atvt9rINy12d+M4tT4vG7Yks2wQ9fGecA3zD9Pcrxg3J9Ih7w9W6HImH8rYAgwta4d7LBcZmjpD+V9mEV7uNd59//f1D4JdEATvhv1VgB3jB8L4E7ESQ=="
+  ];
+
+  function decodeTrackData(str) {
     try {
-      if (!playing) {
+      return atob(str);
+    } catch (e) {
+      console.error('Ошибка декодирования base64:', e);
+      return null;
+    }
+  }
+
+  function buildAudio() {
+    if (audio) return audio;
+    const source = TRACK_DATA && TRACK_DATA[0];
+    if (!source) return null;
+    const binary = decodeTrackData(source);
+    if (!binary) return null;
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'audio/mpeg' });
+    audio = new Audio(URL.createObjectURL(blob));
+    audio.loop = true;
+    audio.volume = 0.65;
+    return audio;
+  }
+
+  btn.addEventListener('click', async function () {
+    try {
+      if (!audio) {
+        audio = buildAudio();
+        if (!audio) {
+          alert('Не удалось загрузить музыку. Проверьте TRACK_DATA.');
+          return;
+        }
+      }
+
+      if (!isPlaying) {
         await audio.play();
-        playing = true;
+        isPlaying = true;
         btn.textContent = '🔊 Выключить музыку';
         btn.setAttribute('aria-pressed', 'true');
       } else {
         audio.pause();
-        playing = false;
+        isPlaying = false;
         btn.textContent = '🎄 Включить музыку';
         btn.setAttribute('aria-pressed', 'false');
       }
     } catch (e) {
-      console.error('Ошибка воспроизведения:', e);
-      alert('Нажмите кнопку ещё раз — браузер может блокировать звук до первого клика.');
+      console.error('Плеер не запустился:', e);
+      alert('Нажмите кнопку ещё раз — браузер может блокировать звук до первого действия пользователя.');
     }
   });
 })();
 </script>
-</body>
-</html>
