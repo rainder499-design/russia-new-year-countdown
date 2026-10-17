@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Проводник — Russia New Year Countdown</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:24px;background:#f7f8fb;color:#111}
+    .card{background:#fff;border:1px solid #e6e9ef;padding:20px;border-radius:10px;max-width:880px}
+    h1{margin:0 0 8px;font-size:20px}
+    p.note{color:#555;margin-top:6px}
+    ul.files{list-style:none;padding:0;margin:16px 0}
+    ul.files li{padding:8px 0;border-bottom:1px dashed #eee;display:flex;justify-content:space-between;align-items:center}
+    a.link{color:#0366d6;text-decoration:none}
+    .btn{background:#0366d6;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    .actions{gap:8px;display:flex}
+    #preview{width:100%;height:560px;border:1px solid #ddd;margin-top:18px;border-radius:6px}
+    .small{font-size:13px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Проводник — Russia New Year Countdown</h1>
+    <p class="note">Ниже ссылка на ваш файл. Нажмите «Открыть» чтобы загрузить его или «Предпросмотр» чтобы встроить прямо на этой странице.</p>
+
+    <ul class="files">
+      <li>
+        <div>
+          <strong>Russia_New_Year_Countdown_2027_CLICK_MUSIC_LOOP-1.html</strong>
+          <div class="small">Файл в корне репозитория</div>
+        </div>
+        <div class="actions">
+          <a class="link" id="openLink" href="Russia_New_Year_Countdown_2027_CLICK_MUSIC_LOOP-1.html" target="_blank" rel="noopener">Открыть в новой вкладке</a>
+          <button class="btn" id="previewBtn">Предпросмотр</button>
+        </div>
+      </li>
+    </ul>
+
+    <div id="previewContainer">
+      <iframe id="preview" title="Preview" src="" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+    </div>
+
+    <p class="small">Примечание: GitHub Pages может обновлять сайт в течение нескольких минут после коммита. Если после обновления всё ещё 404 — скиньте ссылку, проверю.</p>
+  </div>
+
+  <script>
+    const previewBtn = document.getElementById('previewBtn');
+    const preview = document.getElementById('preview');
+    const openLink = document.getElementById('openLink');
+
+    const filename = 'Russia_New_Year_Countdown_2027_CLICK_MUSIC_LOOP-1.html';
+
+    previewBtn.addEventListener('click', ()=>{
+      // Устанавливаем iframe.src относительным путём — Pages должен обслуживать этот файл
+      preview.src = filename;
+      previewBtn.textContent = preview.src ? 'Обновить предпросмотр' : 'Предпросмотр';
+    });
+
+    // Если хотите автоматически открывать при заходе, раскомментируйте следующую строку:
+    // openLink.click();
+  </script>
+</body>
+</html>
