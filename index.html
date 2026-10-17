@@ -16,12 +16,13 @@
     .actions{gap:8px;display:flex}
     #preview{width:100%;height:560px;border:1px solid #ddd;margin-top:18px;border-radius:6px}
     .small{font-size:13px;color:#666}
+    #audioPlayer{margin-top:12px;width:100%}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Проводник — Russia New Year Countdown</h1>
-    <p class="note">Ниже ссылка на ваш файл. Нажмите «Открыть» чтобы загрузить его или «Предпросмотр» чтобы встроить прямо на этой странице.</p>
+    <p class="note">Ниже ссылка на ваш файл. Нажмите «Открыть» чтобы загрузить его или «Предпросмотр» чтобы встроить прямо на этой странице. Если музыка внутри файла не стартует, используйте кнопку «Воспроизвести музыку» — она попытается извлечь аудио из файла и запустить его (клик пользователя требуется браузером).</p>
 
     <ul class="files">
       <li>
@@ -32,32 +33,78 @@
         <div class="actions">
           <a class="link" id="openLink" href="Russia_New_Year_Countdown_2027_CLICK_MUSIC_LOOP-1.html" target="_blank" rel="noopener">Открыть в новой вкладке</a>
           <button class="btn" id="previewBtn">Предпросмотр</button>
+          <button class="btn" id="playAudioBtn">Воспроизвести музыку</button>
         </div>
       </li>
     </ul>
 
     <div id="previewContainer">
-      <iframe id="preview" title="Preview" src="" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+      <iframe id="preview" title="Preview" src="" sandbox="allow-same-origin allow-scripts allow-popups" allow="autoplay"></iframe>
     </div>
 
-    <p class="small">Примечание: GitHub Pages может обновлять сайт в течение нескольких минут после коммита. Если после обновления всё ещё 404 — скиньте ссылку, проверю.</p>
+    <audio id="audioPlayer" controls style="display:none"></audio>
+
+    <p class="small">Примечание: GitHub Pages может обновлять сайт в течение нескольких минут после коммита. Если после обновления всё ещё 404 — сообщите.</p>
   </div>
 
   <script>
     const previewBtn = document.getElementById('previewBtn');
     const preview = document.getElementById('preview');
     const openLink = document.getElementById('openLink');
+    const playAudioBtn = document.getElementById('playAudioBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
 
     const filename = 'Russia_New_Year_Countdown_2027_CLICK_MUSIC_LOOP-1.html';
 
     previewBtn.addEventListener('click', ()=>{
-      // Устанавливаем iframe.src относительным путём — Pages должен обслуживать этот файл
       preview.src = filename;
-      previewBtn.textContent = preview.src ? 'Обновить предпросмотр' : 'Предпросмотр';
+      previewBtn.textContent = 'Обновить предпросмотр';
     });
 
-    // Если хотите автоматически открывать при заходе, раскомментируйте следующую строку:
-    // openLink.click();
+    // Попытка извлечь audio-src из HTML-файла и воспроизвести его в родительском окне.
+    playAudioBtn.addEventListener('click', async ()=>{
+      try{
+        const res = await fetch(filename, {cache: 'no-store'});
+        if(!res.ok) throw new Error('Не удалось загрузить файл: '+res.status);
+        const text = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+
+        // Ищем <audio src=...>, <audio><source src=...>, а также <source src=...> внутри.
+        let src = null;
+        const aud = doc.querySelector('audio');
+        if(aud){
+          src = aud.getAttribute('src') || (aud.querySelector('source') && aud.querySelector('source').getAttribute('src'));
+        }
+        if(!src){
+          const source = doc.querySelector('source');
+          if(source) src = source.getAttribute('src');
+        }
+        // Также возможен прямой <audio> внутри скрипта или использование WebAudio — такие случаи не найдём автоматически.
+
+        if(!src){
+          alert('Не найден явный аудиофайл в HTML. Откройте файл в новой вкладке и воспроизведите там, либо сообщите мне, как встраивается звук (audio tag или через JS).');
+          return;
+        }
+
+        // Преобразуем относительный путь в абсолютный
+        const url = new URL(src, location.href).href;
+
+        audioPlayer.src = url;
+        audioPlayer.style.display = 'block';
+        try{
+          await audioPlayer.play();
+        }catch(err){
+          // Если browser заблокировал autoplay — попросим пользователя нажать ещё раз
+          console.warn('play() отклонён:', err);
+          alert('Браузер может блокировать автоматическое воспроизведение. Нажмите кнопку «Воспроизвести» на плеере, если звук не появился.');
+        }
+      }catch(e){
+        console.error(e);
+        alert('Ошибка при попытке воспроизвести: '+e.message);
+      }
+    });
+
   </script>
 </body>
 </html>
